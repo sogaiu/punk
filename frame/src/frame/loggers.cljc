@@ -2,13 +2,19 @@
   (:require
    [clojure.set :refer [difference]]
    #?@(:clj [[clojure.string :as str]
-             [clojure.tools.logging :as log]])))
+             [clojure.tools.logging :as log]])
+   #?(:cljr [clojure.string :as str])))
 
 #?(:clj (defn log [level & args]
           (log/log level (if (= 1 (count args))
                            (first args)
-                           (str/join " " args)))))
-
+                           (str/join " " args))))
+   :cljr (defn log [level & args]
+           ;; XXX: find something better
+           (println (str (name level) ": "
+                         (if (= 1 (count args))
+                           (first args)
+                           (str/join " " args))))))
 
 ;; XXX should loggers be put in the registrar ??
 (def ^:private loggers
@@ -24,13 +30,13 @@
                                (js/console.log.bind   js/console))
                   :groupEnd  (if (.-groupEnd js/console)        ;; console.groupEnd does not exist  < IE 11
                                (js/console.groupEnd.bind js/console)
-                               #())})
-        ;; clojure versions
-        #?(:clj {:log      (partial log :info)
-                 :warn     (partial log :warn)
-                 :error    (partial log :error)
-                 :group    (partial log :info)
-                 :groupEnd  #()})))
+                               #())}
+           ;; clojure versions
+           :default {:log      (partial log :info)
+                     :warn     (partial log :warn)
+                     :error    (partial log :error)
+                     :group    (partial log :info)
+                     :groupEnd  #()})))
 
 (defn console
   [level & args]

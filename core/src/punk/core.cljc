@@ -5,8 +5,8 @@
             #?(:cljs [cljs.repl :as repl])))
 
 (def dbg>
-  (partial #?(:clj println
-              :cljs js/console.log)
+  (partial #?(:cljs js/console.log
+              :default println)
            "punk>"))
 
 ;;
@@ -23,8 +23,7 @@
              (-write writer (str "\"" (.toString sym) "\"")))))
 
 (defn dataficate [x]
-  #?(:clj x ; XXX: might need some work :)
-     :cljs (cond
+  #?(:cljs (cond
              ;; (object? x)
              ;; (do (specify! x
              ;;       p/Datafiable
@@ -35,7 +34,9 @@
              ;;     x)
              (instance? js/Error x)
              (repl/Error->map x)
-             :else x)))
+             :else x)
+     ;; XXX: might need some work :)
+     :default x))
 
 ;;
 ;; State
@@ -66,25 +67,25 @@
 (def debug-db
   (frame.interceptors/->interceptor
    :id :punk/debug-db
-   :before (dbg (fn [x] (#?(:clj println
-                            :cljs js/console.log)
+   :before (dbg (fn [x] (#?(:cljs js/console.log
+                            :default println)
                          "db/before> " (-> x :coeffects :db))))
-   :after (dbg (fn [x] (#?(:clj println
-                           :cljs js/console.log)
+   :after (dbg (fn [x] (#?(:cljs js/console.log
+                           :default println)
                         "db/after> " (-> x :effects :db))))))
 
 (def debug-event
   (frame.interceptors/->interceptor
    :id :punk/debug-event
-   :before (dbg (fn [x] (#?(:clj println
-                            :cljs js/console.log)
+   :before (dbg (fn [x] (#?(:cljs js/console.log
+                            :default println)
                          "event> " (-> x :coeffects :event))))))
 
 (def debug-fx
   (frame.interceptors/->interceptor
    :id :punk/debug-event
-   :after (dbg (fn [x] (#?(:clj println
-                           :cljs js/console.log)
+   :after (dbg (fn [x] (#?(:cljs js/console.log
+                           :default println)
                         "effects> " (-> x :effects))))))
 
 (f/reg-event-fx

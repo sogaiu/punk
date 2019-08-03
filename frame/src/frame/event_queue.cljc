@@ -89,10 +89,10 @@
 
 
 ;; Concrete implementation of IEventQueue
-(deftype EventQueue [#?(:cljs ^:mutable fsm-state               :clj ^:volatile-mutable fsm-state)
+(deftype EventQueue [#?(:cljs ^:mutable fsm-state               :default ^:volatile-mutable fsm-state)
                      handle
-                     #?(:cljs ^:mutable queue                   :clj ^:volatile-mutable queue)
-                     #?(:cljs ^:mutable post-event-callback-fns :clj ^:volatile-mutable post-event-callback-fns)]
+                     #?(:cljs ^:mutable queue                   :default ^:volatile-mutable queue)
+                     #?(:cljs ^:mutable post-event-callback-fns :default ^:volatile-mutable post-event-callback-fns)]
   IEventQueue
 
   ;; -- API ------------------------------------------------------------------
@@ -173,7 +173,7 @@
         (handle event-v)
         (set! queue (pop queue))
         (-call-post-event-callbacks this event-v)
-        (catch #?(:cljs :default :clj Exception) ex
+        (catch #?(:cljs :default :default Exception) ex
           (-fsm-trigger this :exception ex)))))
 
   (-run-next-tick
