@@ -205,15 +205,24 @@
 (f/reg-event-fx
  ui-frame :punk.ui.browser/nav-to-next
  [#_debug-db #_debug-event]
- (fn [{:keys [db]} [_]]
-   (let [{:keys [key value]} (:next db)
-         {:keys [idx]} (:current db)]
-     {:db (-> db
-              (assoc
-               :current/loading true
-               :next.view/selected nil
-               :next nil))
-      :emit [:nav idx key value]})))
+ (fn [{:keys [db]} [_ idx k v]]
+   (let [{:keys [key value]}
+         (if idx
+           (let [next-val (get (:current db) k v) ; XXX: ignore v?
+                 next-meta (meta next-val)] ; XXX: don't need next-meta?
+             {:key k
+              :value next-val})
+           (:next db))
+         {:keys [idx]}
+         (if idx
+           {:idx idx}
+           (:current db))]
+       {:db (-> db
+                (assoc
+                 :current/loading true
+                 :next.view/selected nil
+                 :next nil))
+        :emit [:nav idx key value]})))
 
 (f/reg-event-fx
  ui-frame :punk.ui.browser/select-next-view
@@ -334,7 +343,7 @@
                  :on-click #(dispatch [:punk.ui.browser/history-nth %])}]]}
    [(:view view)
     {:data (-> current :value)
-     :nav #(dispatch [:punk.ui.browser/preview
+     :nav #(dispatch [:punk.ui.browser/nav-to-next
                       (-> current :idx) %2 %3])}]])
 
 (defnc Browser [{:keys [state width]}]
