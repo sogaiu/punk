@@ -81,11 +81,9 @@
                       :history []
                       :current nil
                       :current/loading false
-                      :next nil
                       :collapsed? true
                       :drawer-width 50
-                      :grid-layout #js [#js {:i "next" :x 0 :y 0 :w 12 :h 6}
-                                        #js {:i "current" :x 0 :y 6 :w 12 :h 6}
+                      :grid-layout #js [#js {:i "current" :x 0 :y 6 :w 12 :h 6}
                                         #js {:i "entries" :x 0 :y 12 :w 12 :h 6}]
                       :views [{:id :punk.view/nil
                                :match nil?
@@ -109,8 +107,7 @@
                                :match any?
                                :view #'views/EdnView}]
                       :next.view/key nil
-                      :current.view/selected nil
-                      :next.view/selected nil}))
+                      :current.view/selected nil}))
 
 (defonce ui-frame (f/create-frame
                    (f/inject-cofx :db)))
@@ -160,7 +157,6 @@
  (fn [{:keys [db]} [_ x]]
    {:db (assoc db
                :current x
-               :next nil
                :current/loading false
                :current.view/selected nil
                :history [])}))
@@ -172,8 +168,6 @@
    {:db (-> db
             (update :history pop)
             (assoc :current (-> db :history peek)
-                   :next nil
-                   :next.view/selected nil
                    :current.view/selected nil))}))
 
 (f/reg-event-fx
@@ -184,51 +178,18 @@
    {:db (-> db
             (assoc :history (vec (take idx (:history db)))
                    :current current
-                   :next nil
-                   :next/key (:nav-key current)
-                   :next.view/selected nil
+                   :next.view/key (:nav-key current)
                    :current.view/selected nil))})))
-
-(f/reg-event-fx
- ui-frame :punk.ui.browser/preview
- [#_debug-db #_debug-event]
- (fn [{:keys [db]} [_ idx k v]]
-   (let [next-val (get (:current db) k v)
-         next-meta (meta next-val)]
-   {:db (assoc db
-               :next.view/key k
-               :next.view/selected nil
-               :next {:value next-val
-                      :key k
-                      :meta next-meta})})))
 
 (f/reg-event-fx
  ui-frame :punk.ui.browser/nav-to-next
  [#_debug-db #_debug-event]
- (fn [{:keys [db]} [_ idx k v]]
-   (let [{:keys [key value]}
-         (if idx
-           (let [next-val (get (:current db) k v) ; XXX: ignore v?
-                 next-meta (meta next-val)] ; XXX: don't need next-meta?
-             {:key k
-              :value next-val})
-           (:next db))
-         {:keys [idx]}
-         (if idx
-           {:idx idx}
-           (:current db))]
-       {:db (-> db
-                (assoc
-                 :current/loading true
-                 :next.view/selected nil
-                 :next nil))
-        :emit [:nav idx key value]})))
-
-(f/reg-event-fx
- ui-frame :punk.ui.browser/select-next-view
- []
- (fn [{:keys [db]} [_ id]]
-   {:db (assoc db :next.view/selected id)}))
+ (fn [{:keys [db]} [_ idx key v]]
+   (let [next-value (get (:current db) key v)] ; XXX: ignore v?
+     {:db (-> db
+              (assoc :current/loading true
+                     :next.view/key key))
+      :emit [:nav idx key next-value]})))
 
 (f/reg-event-fx
  ui-frame :punk.ui.browser/select-current-view
@@ -299,19 +260,6 @@
 ;; Browser panes
 ;;
 
-(defnc Next [{:keys [view views current]}]
-  [pc/Pane {:title "Next"
-            :controls [:div
-                       [:select {:value (str (:id view))
-                                 :on-change #(dispatch [:punk.ui.browser/select-next-view
-                                                        (keyword (subs (.. % -target -value) 1))])}
-                        (for [vid (map (comp str :id) views)]
-                          [:option {:key vid} vid])]]}
-   [(:view view)
-    {:data (-> current :value)
-     :id "punk__next"
-     :nav #(dispatch [:punk.ui.browser/nav-to-next])}]])
-
 (defnc Breadcrumbs [{:keys [items on-click]}]
   [:<>
    (map-indexed
@@ -347,14 +295,7 @@
                       (-> current :idx) %2 %3])}]])
 
 (defnc Browser [{:keys [state width]}]
-  (let [next-views (-> (:views state)
-                       (match-views (-> state :next :value)))
-
-        next-view (if (:next.view/selected state)
-                    (first (filter #(= (:id %) (:next.view/selected state)) next-views))
-                    (first next-views))
-
-        current-views (-> (:views state)
+  (let [current-views (-> (:views state)
                           (match-views (-> state :current :value)))
 
         current-view (if (:current.view/selected state)
@@ -369,11 +310,6 @@
        :rowHeight 30
        :width width
        :draggableHandle ".punk__pane__titlebar"}
-      ;; Next
-      [:div {:key "next"}
-       [Next {:view next-view
-              :views next-views
-              :current (-> state :next)}]]
       ;; Current
       [:div {:key "current"}
        [Current {:history (:history state)
