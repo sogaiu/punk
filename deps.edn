@@ -1,0 +1,7 @@
+{
+ :paths [
+   "core/src"
+   "frame/src"
+   "ui/src"
+ ]
+}
