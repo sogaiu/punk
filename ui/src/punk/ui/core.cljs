@@ -83,7 +83,8 @@
                       :current/loading false
                       :collapsed? true
                       :drawer-width 50
-                      :grid-layout #js [#js {:i "current" :x 0 :y 6 :w 12 :h 6}
+                      :grid-layout #js [#js {:i "metadata" :x 0 :y 0 :w 12 :h 6}
+                                        #js {:i "current" :x 0 :y 6 :w 12 :h 6}
                                         #js {:i "entries" :x 0 :y 12 :w 12 :h 6}]
                       :views [{:id :punk.view/nil
                                :match nil?
@@ -272,6 +273,13 @@
    (when (seq items)
      [:span {:class ["punk__breadcrumb" "punk__breadcrumb_last"]} (str (last items))])])
 
+(defnc Metadata [{:keys [data]}]
+  [pc/Pane
+   {:title "Metadata"
+    :id "punk__metadata"}
+   [views/MapView
+    {:data data}]])
+
 (defnc Current [{:keys [history view views current]}]
   [pc/Pane
    {:title "Current"
@@ -295,7 +303,8 @@
                       (-> current :idx) %2 %3])}]])
 
 (defnc Browser [{:keys [state width]}]
-  (let [current-views (-> (:views state)
+  (let [metadata (or (-> state :current :meta) {})
+        current-views (-> (:views state)
                           (match-views (-> state :current :value)))
 
         current-view (if (:current.view/selected state)
@@ -310,6 +319,9 @@
        :rowHeight 30
        :width width
        :draggableHandle ".punk__pane__titlebar"}
+      ;; Metadata
+      [:div {:key "metadata"}
+       [Metadata {:data metadata}]]
       ;; Current
       [:div {:key "current"}
        [Current {:history (:history state)

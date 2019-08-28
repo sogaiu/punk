@@ -110,28 +110,28 @@
 }
 
 
-#punk__next {
+#punk__metadata {
     overflow: auto;
     max-height: 100%;
 }
 
-#punk__next {
+#punk__metadata {
     cursor: pointer;
     padding: 3px;
     margin: 3px;
 }
 
-#punk__next:hover {
+#punk__metadata:hover {
     background-color: #eaeaea
         /* #44475a */
     ;
 }
 
-#punk__next.nohover {
+#punk__metadata.nohover {
     cursor: initial;
 }
 
-#punk__next.nohover:hover {
+#punk__metadata.nohover:hover {
     background-color: initial;
 }
 
